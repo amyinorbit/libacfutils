@@ -22,6 +22,7 @@ CONFIG += warn_on plugin release
 CONFIG -= thread exceptions qt rtti debug
 
 QMAKE_APPLE_DEVICE_ARCHS = x86_64 arm64
+QMAKE_MACOSX_DEPLOYMENT_TARGET=10.13
 
 VERSION = 1.0.0
 
