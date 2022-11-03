@@ -152,7 +152,7 @@
 /* precomputed, since it doesn't change */
 #define	RWY_APCH_PROXIMITY_LAT_DISPL	(RWY_APCH_PROXIMITY_LON_DISPL * \
 	__builtin_tan(DEG2RAD(RWY_APCH_PROXIMITY_LAT_ANGLE)))
-#define	ARPTDB_CACHE_VERSION		19
+#define	ARPTDB_CACHE_VERSION		20
 
 #define	VGSI_LAT_DISPL_FACT		2	/* rwy width multiplier */
 #define	VGSI_HDG_MATCH_THRESH		5	/* degrees */
@@ -652,8 +652,23 @@ make_rwy_bbox(vect2_t thresh_v, vect2_t dir_v, double width, double len,
 static bool_t
 rwy_is_hard(rwy_surf_t surf)
 {
-	return (surf == RWY_SURF_ASPHALT || surf == RWY_SURF_CONCRETE ||
-	    surf == RWY_SURF_TRANSPARENT);
+	/*
+	 * We used to only check for a few surface types here, but XP12
+	 * added a bunch more undocumented hard surface types, so in
+	 * anticipation of further surface types being added, we'll instead
+	 * explicitly check for the known soft surface types first.
+	 */
+	switch (surf) {
+	case RWY_SURF_GRASS:
+	case RWY_SURF_DIRT:
+	case RWY_SURF_GRAVEL:
+	case RWY_SURF_DRY_LAKEBED:
+	case RWY_SURF_WATER:
+	case RWY_SURF_SNOWICE:
+		return (false);
+	default:
+		return (true);
+	}
 }
 
 /*
@@ -2150,7 +2165,8 @@ airportdb_xp11_airac_cycle(const char *xpdir, int *cycle)
 			break;
 		if (getline(&line, &linecap, fp) <= 0 ||
 		    (strstr(line, "1100 ") != line &&
-		    strstr(line, "1150 ") != line) ||
+		    strstr(line, "1150 ") != line &&
+		    strstr(line, "1200 ") != line) ||
 		    (word_start = strstr(line, " data cycle ")) == NULL) {
 			continue;
 		}
