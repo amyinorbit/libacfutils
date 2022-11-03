@@ -661,7 +661,7 @@ rwy_is_hard(rwy_surf_t surf)
 	switch (surf) {
 	case RWY_SURF_GRASS:
 	case RWY_SURF_DIRT:
-	case RWY_SURF_GRAVEL:
+    // case RWY_SURF_GRAVEL:
 	case RWY_SURF_DRY_LAKEBED:
 	case RWY_SURF_WATER:
 	case RWY_SURF_SNOWICE:
