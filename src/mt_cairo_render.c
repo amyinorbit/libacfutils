@@ -145,14 +145,27 @@ struct mt_cairo_uploader_s {
 	thread_t	worker;
 };
 
+/*
+ * Due to a bug in AMD's drivers on Windows (at least as of 23.04.2), when
+ * running in XP12 on top of Zink, we cannot utilize the vtx_tex0 input
+ * attribute. This results in badly flipped UVs for the second triangle
+ * forming our surface. This nasty workaround uses a hardcoded const UV
+ * array instead.
+ */
 static const char *vert_shader =
     "#version 120\n"
+    "#extension GL_EXT_gpu_shader4 : require\n"
     "uniform mat4	pvm;\n"
     "attribute vec3	vtx_pos;\n"
-    "attribute vec2	vtx_tex0;\n"
     "varying vec2	tex_coord;\n"
+    "const vec2 tex_coords[4] = vec2[](\n"
+    "  vec2(0.0f, 1.0f),\n"
+    "  vec2(0.0f, 0.0f),\n"
+    "  vec2(1.0f, 0.0f),\n"
+    "  vec2(1.0f, 1.0f)\n"
+    ");\n"
     "void main() {\n"
-    "	tex_coord = vtx_tex0;\n"
+    "	tex_coord = tex_coords[gl_VertexID];\n"
     "	gl_Position = pvm * vec4(vtx_pos, 1.0);\n"
     "}\n";
 
@@ -177,10 +190,15 @@ static const char *vert_shader410 =
     "#version 410\n"
     "uniform mat4			pvm;\n"
     "layout(location = %d) in vec3	vtx_pos;\n"
-    "layout(location = %d) in vec2	vtx_tex0;\n"
     "layout(location = 0) out vec2	tex_coord;\n"
+    "const vec2 tex_coords[4] = vec2[](\n"
+    "  vec2(0.0f, 1.0f),\n"
+    "  vec2(0.0f, 0.0f),\n"
+    "  vec2(1.0f, 0.0f),\n"
+    "  vec2(1.0f, 1.0f)\n"
+    ");\n"
     "void main() {\n"
-    "	tex_coord = vtx_tex0;\n"
+    "	tex_coord = tex_coords[gl_VertexID];\n"
     "	gl_Position = pvm * vec4(vtx_pos, 1.0);\n"
     "}\n";
 
@@ -512,7 +530,8 @@ mtcr_gl_init(mt_cairo_render_t *mtcr)
 	glBindTexture(GL_TEXTURE_2D, mtcr->tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mtcr->filter);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mtcr->filter);
-	XPLMBindTexture2d(0, 0);
+	if (on_main_thread)
+		XPLMBindTexture2d(0, 0);
 
 	IF_TEXSZ(TEXSZ_ALLOC_INSTANCE(mt_cairo_render_tex, mtcr,
 	    mtcr->init_filename, mtcr->init_line, gl_fmt,
@@ -1553,7 +1572,7 @@ mtul_worker(void *arg)
  *	mt_cairo_render_fini(mtcr3);
  *	mt_cairo_render_fini(mtcr2);
  *	mt_cairo_render_fini(mtcr1);
- *	mt_cairo_uploader_destroy(uploader);	<- uploader fini must go last
+ *	mt_cairo_uploader_fini(uploader);	<- uploader fini must go last
  */
 mt_cairo_uploader_t *
 mt_cairo_uploader_init(void)
