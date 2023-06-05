@@ -244,8 +244,8 @@ start_auth(chartdb_t *cdb, navigraph_t *nav)
 	chart_dl_info_t dl_info;
 
 	ASSERT(cdb != NULL);
-	ASSERT(cdb->prov_info != NULL);
-	login = cdb->prov_info;
+	ASSERT(cdb->prov_login != NULL);
+	login = cdb->prov_login;
 	ASSERT(nav != NULL);
 
 	chart_dl_info_init(&dl_info, cdb, DEV_AUTH_ENDPT);
@@ -393,8 +393,8 @@ get_tokens(chartdb_t *cdb, navigraph_t *nav)
 
 	ASSERT(cdb != NULL);
 	ASSERT(nav != NULL);
-	ASSERT(cdb->prov_info != NULL);
-	login = cdb->prov_info;
+	ASSERT(cdb->prov_login != NULL);
+	login = cdb->prov_login;
 
 	chart_dl_info_init(&dl_info, cdb, TOKEN_ENDPT);
 
@@ -745,8 +745,8 @@ chart_navigraph_init(chartdb_t *cdb)
 
 	ASSERT(cdb != NULL);
 
-	VERIFY(cdb->prov_info != NULL);
-	login = cdb->prov_info;
+	VERIFY(cdb->prov_login != NULL);
+	login = cdb->prov_login;
 	VERIFY(login->username != NULL);
 	VERIFY(login->password != NULL);
 	VERIFY(login->cainfo != NULL);
@@ -1003,6 +1003,43 @@ parse_chart_georef_data(const void *json, const jsmntok_t *toks, int n_toks,
 	}
 }
 
+static void
+parse_chart_view_data(const void *json, const jsmntok_t *toks, int n_toks,
+    chart_t *chart, int i, chart_view_t view)
+{
+	static const char *view_names[] = {
+	    [CHART_VIEW_HEADER] = "header",
+	    [CHART_VIEW_PLANVIEW] = "planview",
+	    [CHART_VIEW_PROFILE] = "profile",
+	    [CHART_VIEW_MINIMUMS] = "minimums"
+	};
+	CTASSERT(ARRAY_NUM_ELEM(view_names) == NUM_CHART_VIEWS);
+	const char *name;
+	chart_bbox_t *bbox;
+	char x1[8], x2[8], y1[8], y2[8];
+
+	ASSERT(json != NULL);
+	ASSERT(toks != NULL);
+	ASSERT(chart != NULL);
+	ASSERT3U(view, <, ARRAY_NUM_ELEM(view_names));
+	name = view_names[view];
+	bbox = &chart->views[view];
+
+	memset(bbox, 0, sizeof (*bbox));
+	if (!jsmn_get_tok_data_path_format(json, toks, n_toks, "charts/[%d]/"
+	    "bounding_boxes/%s/pixels/x1", x1, sizeof (x1), i, name) ||
+	    !jsmn_get_tok_data_path_format(json, toks, n_toks, "charts/[%d]/"
+	    "bounding_boxes/%s/pixels/x2", x2, sizeof (x2), i, name) ||
+	    !jsmn_get_tok_data_path_format(json, toks, n_toks, "charts/[%d]/"
+	    "bounding_boxes/%s/pixels/y1", y1, sizeof (y1), i, name) ||
+	    !jsmn_get_tok_data_path_format(json, toks, n_toks, "charts/[%d]/"
+	    "bounding_boxes/%s/pixels/y2", y2, sizeof (y2), i, name)) {
+		return;
+	}
+	bbox->pts[0] = VECT2(atoi(x1), atoi(y1));
+	bbox->pts[1] = VECT2(atoi(x2), atoi(y2));
+}
+
 static bool_t
 parse_chart_json(const void *json, size_t len, chart_arpt_t *arpt)
 {
@@ -1091,6 +1128,10 @@ parse_chart_json(const void *json, size_t len, chart_arpt_t *arpt)
 			}
 		}
 		parse_chart_georef_data(json, toks, n_toks, chart, i);
+		for (chart_view_t view = 0; view < NUM_CHART_VIEWS; view++) {
+			parse_chart_view_data(json, toks, n_toks, chart, i,
+			    view);
+		}
 		if (!chartdb_add_chart(arpt, chart)) {
 			/*
 			 * Duplicate chart - unfortunately, Navigraph is
