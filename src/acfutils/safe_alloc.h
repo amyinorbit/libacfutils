@@ -92,11 +92,13 @@ safe_realloc(void *oldptr, size_t size)
 static inline char *
 safe_strdup(const char *str2)
 {
-	char *str = strdup(str2);
-	if (str2 != NULL) {
-		VERIFY_MSG(str != NULL, "Cannot allocate %lu bytes: "
-		    "out of memory", (long unsigned)strlen(str2) + 1);
-	}
+	char *str;
+	int l;
+	ASSERT(str2 != NULL);
+	l = strlen(str2);
+	str = (char *)safe_malloc(l + 1);
+	memcpy(str, str2, l);
+	str[l] = '\0';
 	return (str);
 }
 
@@ -148,6 +150,14 @@ safe_append_realloc(char *buf, const char *str)
 			memset((ptr), 0, sizeof (*(ptr))); \
 		free(ptr); \
 	} while (0)
+/**
+ * Same as ZERO_FREE(), but also sets `ptr` to NULL after freeing.
+ */
+#define	DESTROY_FREE(ptr) \
+	do { \
+		ZERO_FREE(ptr); \
+		(ptr) = NULL; \
+	} while (0)
 
 /**
  * Same as \ref ZERO_FREE, but takes an explicit array element count
@@ -161,6 +171,14 @@ safe_append_realloc(char *buf, const char *str)
 			memset((ptr), 0, sizeof (*(ptr)) * (num)); \
 		free(ptr); \
 	} while (0)
+/**
+ * Same as ZERO_FREE_N(), but also sets `ptr` to NULL after freeing.
+ */
+#define	DESTROY_FREE_N(ptr, num) \
+	do { \
+		ZERO_FREE_N((ptr), (num)); \
+		(ptr) = NULL; \
+	while (0)
 
 /**
  * Performs a zeroing of the `data` buffer. Please note that `sizeof`
