@@ -126,6 +126,11 @@ API_EXPORT void log_backtrace(int skip_frames);
 API_EXPORT void log_backtrace_sw64(PCONTEXT ctx);
 #endif
 
+/**
+ * This function logs a formatted string to the log, without any prefixes.
+ */
+void log_raw(const char *fmt, ...);
+
 #ifdef __cplusplus
 }
 #endif

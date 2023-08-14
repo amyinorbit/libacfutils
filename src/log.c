@@ -121,6 +121,37 @@ log_fini(void)
 #endif
 }
 
+void
+log_raw_v(const char *fmt, va_list ap)
+{
+	va_list ap_copy;
+	char *buf;
+	size_t len;
+
+	/* Can't use VERIFY here, since it uses this logging interface. */
+	if (log_func == NULL || log_prefix == NULL)
+		abort();
+
+	len = vsnprintf(NULL, 0, fmt, ap_copy);
+	buf = (char *)malloc(len + 2);
+
+	(void) vsnprintf(buf, len + 1, fmt, ap);
+	(void) sprintf(&buf[strlen(buf)], "\n");
+	log_func(buf);
+
+	free(buf);
+}
+
+
+void
+log_raw(const char *fmt, ...)
+{
+	va_list ap;
+	va_start(ap, fmt);
+	log_raw_v(fmt, ap);
+	va_end(ap);
+}
+
 /**
  * Log implementation function. Do not call directly. Use the logMsg() macro.
  * @see logMsg()

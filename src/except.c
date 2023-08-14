@@ -113,25 +113,25 @@ handle_posix_sig(int sig, siginfo_t *siginfo, void *context)
 	} while (0)
 	switch (sig) {
 	case SIGSEGV:
-		logMsg("Caught SIGSEGV: segmentation fault (%p)",
+		log_raw("Caught SIGSEGV: segmentation fault (%p)",
 		    siginfo->si_addr);
 		break;
 	case SIGABRT:
-		logMsg("Caught SIGABORT: abort (%p)", siginfo->si_addr);
+		log_raw("Caught SIGABORT: abort (%p)", siginfo->si_addr);
 		break;
 	case SIGFPE:
-		logMsg("Caught SIGFPE: floating point exception (%s)",
+		log_raw("Caught SIGFPE: floating point exception (%s)",
 		    sigfpe2str(siginfo->si_code));
 		break;
 	case SIGILL:
-		logMsg("Caught SIGILL: illegal instruction (%s)",
+		log_raw("Caught SIGILL: illegal instruction (%s)",
 		    sigill2str(siginfo->si_code));
 		break;
 	case SIGTERM:
-		logMsg("Caught SIGTERM: terminated");
+		log_raw("Caught SIGTERM: terminated");
 		break;
 	default:
-		logMsg("Caught signal %d", sig);
+		log_raw("Caught signal %d", sig);
 		break;
 	}
 
@@ -222,67 +222,67 @@ handle_windows_exception(EXCEPTION_POINTERS *ei)
 		/* No need to print anything, there's already a log message */
 		break;
 	case EXCEPTION_ACCESS_VIOLATION:
-		logMsg("Caught EXCEPTION_ACCESS_VIOLATION");
+		log_raw("Caught EXCEPTION_ACCESS_VIOLATION");
 		break;
 	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-		logMsg("Caught EXCEPTION_ARRAY_BOUNDS_EXCEEDED");
+		log_raw("Caught EXCEPTION_ARRAY_BOUNDS_EXCEEDED");
 		break;
 	case EXCEPTION_BREAKPOINT:
-		logMsg("Caught EXCEPTION_BREAKPOINT");
+		log_raw("Caught EXCEPTION_BREAKPOINT");
 		break;
 	case EXCEPTION_DATATYPE_MISALIGNMENT:
-		logMsg("Caught EXCEPTION_DATATYPE_MISALIGNMENT");
+		log_raw("Caught EXCEPTION_DATATYPE_MISALIGNMENT");
 		break;
 	case EXCEPTION_FLT_DENORMAL_OPERAND:
-		logMsg("Caught EXCEPTION_FLT_DENORMAL_OPERAND");
+		log_raw("Caught EXCEPTION_FLT_DENORMAL_OPERAND");
 		break;
 	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-		logMsg("Caught EXCEPTION_FLT_DIVIDE_BY_ZERO");
+		log_raw("Caught EXCEPTION_FLT_DIVIDE_BY_ZERO");
 		break;
 	case EXCEPTION_FLT_INEXACT_RESULT:
-		logMsg("Caught EXCEPTION_FLT_INEXACT_RESULT");
+		log_raw("Caught EXCEPTION_FLT_INEXACT_RESULT");
 		break;
 	case EXCEPTION_FLT_INVALID_OPERATION:
-		logMsg("Caught EXCEPTION_FLT_INVALID_OPERATION");
+		log_raw("Caught EXCEPTION_FLT_INVALID_OPERATION");
 		break;
 	case EXCEPTION_FLT_OVERFLOW:
-		logMsg("Caught EXCEPTION_FLT_OVERFLOW");
+		log_raw("Caught EXCEPTION_FLT_OVERFLOW");
 		break;
 	case EXCEPTION_FLT_STACK_CHECK:
-		logMsg("Caught EXCEPTION_FLT_STACK_CHECK");
+		log_raw("Caught EXCEPTION_FLT_STACK_CHECK");
 		break;
 	case EXCEPTION_FLT_UNDERFLOW:
-		logMsg("Caught EXCEPTION_FLT_UNDERFLOW");
+		log_raw("Caught EXCEPTION_FLT_UNDERFLOW");
 		break;
 	case EXCEPTION_ILLEGAL_INSTRUCTION:
-		logMsg("Caught EXCEPTION_ILLEGAL_INSTRUCTION");
+		log_raw("Caught EXCEPTION_ILLEGAL_INSTRUCTION");
 		break;
 	case EXCEPTION_IN_PAGE_ERROR:
-		logMsg("Caught EXCEPTION_IN_PAGE_ERROR");
+		log_raw("Caught EXCEPTION_IN_PAGE_ERROR");
 		break;
 	case EXCEPTION_INT_DIVIDE_BY_ZERO:
-		logMsg("Caught EXCEPTION_INT_DIVIDE_BY_ZERO");
+		log_raw("Caught EXCEPTION_INT_DIVIDE_BY_ZERO");
 		break;
 	case EXCEPTION_INT_OVERFLOW:
-		logMsg("Caught EXCEPTION_INT_OVERFLOW");
+		log_raw("Caught EXCEPTION_INT_OVERFLOW");
 		break;
 	case EXCEPTION_INVALID_DISPOSITION:
-		logMsg("Caught EXCEPTION_INVALID_DISPOSITION");
+		log_raw("Caught EXCEPTION_INVALID_DISPOSITION");
 		break;
 	case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-		logMsg("Caught EXCEPTION_NONCONTINUABLE_EXCEPTION");
+		log_raw("Caught EXCEPTION_NONCONTINUABLE_EXCEPTION");
 		break;
 	case EXCEPTION_PRIV_INSTRUCTION:
-		logMsg("Caught EXCEPTION_PRIV_INSTRUCTION");
+		log_raw("Caught EXCEPTION_PRIV_INSTRUCTION");
 		break;
 	case EXCEPTION_SINGLE_STEP:
-		logMsg("Caught EXCEPTION_SINGLE_STEP");
+		log_raw("Caught EXCEPTION_SINGLE_STEP");
 		break;
 	case EXCEPTION_STACK_OVERFLOW:
-		logMsg("Caught EXCEPTION_STACK_OVERFLOW");
+		log_raw("Caught EXCEPTION_STACK_OVERFLOW");
 		break;
 	default:
-		logMsg("Caught unknown exception %lx",
+		log_raw("Caught unknown exception %lx",
 		    ei->ExceptionRecord->ExceptionCode);
 		break;
 	}
