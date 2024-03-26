@@ -54,12 +54,11 @@ mk_index_path(chartdb_t *cdb)
 static char *
 mk_country_cache_path(chartdb_t *cdb, const char *country_name)
 {
-	char airac_nr[8];
-	char fname[strlen(country_name) + 8];
-
-	snprintf(airac_nr, sizeof (airac_nr), "%d", cdb->airac);
-	snprintf(fname, sizeof (fname), "%s.xml", country_name);
-	return (mkpathname(cdb->path, cdb->prov_name, airac_nr, fname, NULL));
+	char *path = sprintf_alloc("%s%c%s%c%d%c%s.xml",
+	    cdb->path, DIRSEP, cdb->prov_name, DIRSEP, cdb->airac,
+	    DIRSEP, country_name);
+	path_normalize(path);
+	return (path);
 }
 
 static char *
@@ -215,7 +214,7 @@ parse_chart(chartdb_t *cdb, CURL *curl, const char *path)
 	chart_arpt_t *arpt;
 	chart_t *chart;
 
-	UNUSED(curl);
+	LACF_UNUSED(curl);
 
 	comps = strsplit(path, "/", B_TRUE, &n_comps);
 	if (n_comps < 5)
@@ -315,7 +314,7 @@ parse_airport(chartdb_t *cdb, CURL *curl, const char *path)
 	char *arpt_name, *country;
 	chart_arpt_t *arpt;
 
-	UNUSED(curl);
+	LACF_UNUSED(curl);
 
 	comps = strsplit(path, "/", B_TRUE, &n_comps);
 	if (n_comps < 3)
@@ -353,6 +352,7 @@ parse_country(chartdb_t *cdb, CURL *curl, const char *path)
 	cachefile = mk_country_cache_path(cdb, comps[1]);
 	result = webdav_foreach_dirlist(cdb, curl, path, cachefile,
 	    parse_airport);
+	free(cachefile);
 	free_strlist(comps, n_comps);
 
 	return (result);
@@ -396,7 +396,7 @@ errout:
 void
 chart_autorouter_fini(chartdb_t *cdb)
 {
-	UNUSED(cdb);
+	LACF_UNUSED(cdb);
 }
 
 bool_t

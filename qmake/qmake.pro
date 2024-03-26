@@ -11,7 +11,7 @@
 #
 # CDDL HEADER END
 
-# Copyright 2021 Saso Kiselkov. All rights reserved.
+# Copyright 2024 Saso Kiselkov. All rights reserved.
 
 # Shared library without any Qt functionality
 TEMPLATE = lib
@@ -30,12 +30,13 @@ debug = $$[DEBUG]
 dll = $$[ACFUTILS_DLL]
 noerrors = $$[NOERRORS]
 minimal=$$system("test -f ../.minimal-deps; echo $?")
+noxplm=$$[ACFUTILS_NOXPLM]
 
 INCLUDEPATH += ../src ../SDK/CHeaders/XPLM
 INCLUDEPATH += ../SDK/CHeaders/Widgets
 INCLUDEPATH += ../lzma/C
 INCLUDEPATH += ../junzip
-QMAKE_CFLAGS += -std=c11 -g -W -Wall -Wextra -fvisibility=hidden
+QMAKE_CFLAGS += -std=c11 -g -W -Wall -Wextra -Werror=vla -fvisibility=hidden
 contains(noerrors, 0) {
 	QMAKE_CFLAGS += -Werror
 }
@@ -43,6 +44,19 @@ QMAKE_CFLAGS += -Wunused-result
 !macx {
 	QMAKE_CFLAGS += -Wno-format-truncation -Wno-cast-function-type
 	QMAKE_CFLAGS += -Wno-stringop-overflow -Wno-missing-field-initializers
+}
+
+win32 {
+	PLAT_LONG = win-64
+	GLEWMX_LIB = ../glew/glew-1.13.0-win-64/install/lib/libglew32mx.a
+}
+linux-g++-64 {
+	PLAT_LONG = linux-64
+	GLEWMX_LIB = ../glew/glew-1.13.0-linux-64/install/lib64/libGLEWmx.a
+}
+macx {
+	PLAT_LONG = mac-64
+	GLEWMX_LIB = ../glew/glew-1.13.0-mac-64/install/lib/libGLEWmx.a
 }
 
 # _GNU_SOURCE needed on Linux for getline()
@@ -80,6 +94,10 @@ contains(dll, 1) {
 
 contains(debug, 0) {
 	QMAKE_CFLAGS += -O2
+}
+
+contains(noxplm, 1) {
+	DEFINES += _LACF_WITHOUT_XPLM
 }
 
 win32 {
@@ -176,7 +194,6 @@ HEADERS += \
     ../src/acfutils/delay_line.h \
     ../src/acfutils/dr_cmd_reg.h \
     ../src/acfutils/dr.h \
-    ../src/acfutils/dsf.h \
     ../src/acfutils/except.h \
     ../src/acfutils/geom.h \
     ../src/acfutils/helpers.h \
@@ -207,7 +224,8 @@ HEADERS += \
     ../src/acfutils/tls.h \
     ../src/acfutils/tumbler.h \
     ../src/acfutils/types.h \
-    ../src/acfutils/widget.h \
+    ../src/acfutils/vector.h \
+    ../src/acfutils/vector_impl.h \
     ../src/acfutils/wmm.h \
     ../src/acfutils/worker.h \
     ../src/acfutils/xpfail.h
@@ -226,7 +244,6 @@ SOURCES += \
     ../src/crc64.c \
     ../src/dr.c \
     ../src/dr_cmd_reg.c \
-    ../src/dsf.c \
     ../src/except.c \
     ../src/GeomagnetismLibrary.c \
     ../src/geom.c \
@@ -244,7 +261,7 @@ SOURCES += \
     ../src/time.c \
     ../src/thread.c \
     ../src/tumbler.c \
-    ../src/widget.c \
+    ../src/vector.c \
     ../src/wmm.c \
     ../src/worker.c
 
@@ -269,6 +286,28 @@ SOURCES += \
     ../ucpp/macro.c \
     ../ucpp/eval.c
 
+exists("../libpng/libpng-$$PLAT_LONG/lib/libpng16.a") {
+	HEADERS += ../src/acfutils/png.h
+	SOURCES += ../src/png.c
+}
+exists("../cairo/cairo-$$PLAT_LONG/lib/libcairo.a") {
+	HEADERS += ../src/acfutils/cairo_utils.h
+	SOURCES += ../src/cairo_utils.c
+}
+exists("../cairo/cairo-$$PLAT_LONG/lib/libcairo.a") : exists("$$GLEWMX_LIB") {
+	HEADERS += \
+	    ../src/acfutils/mt_cairo_render.h \
+	    ../src/acfutils/widget.h
+	SOURCES += \
+	    ../src/mt_cairo_render.c \
+	    ../src/widget.c
+}
+
+exists("../lzma/qmake/$$PLAT_LONG/liblzma.a") {
+	HEADERS += ../src/acfutils/dsf.h
+	SOURCES += ../src/dsf.c
+}
+
 # Optional lib components when building a non-minimal library
 contains(minimal, 1) {
 	HEADERS += \
@@ -281,11 +320,8 @@ contains(minimal, 1) {
 	    ../src/acfutils/glew_os.h \
 	    ../src/acfutils/glutils.h \
 	    ../src/acfutils/lacf_gl_pic.h \
-	    ../src/acfutils/cairo_utils.h \
-	    ../src/acfutils/mt_cairo_render.h \
 	    ../src/acfutils/odb.h \
 	    ../src/acfutils/paste.h \
-	    ../src/acfutils/png.h \
 	    ../src/acfutils/riff.h \
 	    ../src/acfutils/shader.h \
 	    ../src/acfutils/wav.h \
@@ -305,11 +341,8 @@ contains(minimal, 1) {
 	    ../src/glutils.c \
 	    ../src/lacf_gl_pic.c \
 	    ../src/minimp3.c \
-	    ../src/cairo_utils.c \
-	    ../src/mt_cairo_render.c \
 	    ../src/odb.c \
 	    ../src/paste.c \
-	    ../src/png.c \
 	    ../src/riff.c \
 	    ../src/shader.c \
 	    ../src/wav.c

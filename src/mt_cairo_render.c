@@ -24,6 +24,7 @@
  */
 
 #include <XPLMGraphics.h>
+#include <XPLMUtilities.h>
 
 #include "acfutils/assert.h"
 #include "acfutils/dr.h"
@@ -339,7 +340,7 @@ worker_render_once(mt_cairo_render_t *mtcr)
 			mtul_submit_mtcr(mtul, mtcr);
 			mutex_enter(&mtcr->lock);
 		} else {
-			mtcr->present_rs = !mtcr->render_rs;
+			mtcr->present_rs = mtcr->render_rs;
 			cv_broadcast(&mtcr->render_done_cv);
 		}
 		mtcr->render_rs = !mtcr->render_rs;
@@ -1222,7 +1223,7 @@ mt_cairo_render_draw(mt_cairo_render_t *mtcr, vect2_t pos, vect2_t size)
  */
 void
 mt_cairo_render_draw_pvm(mt_cairo_render_t *mtcr, vect2_t pos, vect2_t size,
-    const GLfloat *pvm)
+    const float *pvm)
 {
 	mt_cairo_render_draw_subrect_pvm(mtcr, ZERO_VECT2, VECT2(1, 1), pos,
 	    size, pvm);
@@ -1265,7 +1266,7 @@ mt_cairo_render_draw_subrect(mt_cairo_render_t *mtcr,
 		glm_mat4_mul(proj, mv, pvm);
 	}
 	mt_cairo_render_draw_subrect_pvm(mtcr, src_pos, src_sz, pos, size,
-	    (GLfloat *)pvm);
+	    (float *)pvm);
 }
 
 /**
@@ -1301,7 +1302,7 @@ mt_cairo_render_draw_subrect(mt_cairo_render_t *mtcr,
 void
 mt_cairo_render_draw_subrect_pvm(mt_cairo_render_t *mtcr,
     vect2_t src_pos, vect2_t src_sz, vect2_t pos, vect2_t size,
-    const GLfloat *pvm)
+    const float *pvm)
 {
 	GLint old_vao = 0;
 	bool_t use_vao;
@@ -1359,7 +1360,7 @@ mt_cairo_render_draw_subrect_pvm(mt_cairo_render_t *mtcr,
 		glUseProgram(mtcr->shader);
 
 		glUniformMatrix4fv(mtcr->shader_loc_pvm,
-		    1, GL_FALSE, (const GLfloat *)pvm);
+		    1, GL_FALSE, (const float *)pvm);
 		glUniform1i(mtcr->shader_loc_tex, 0);
 		if (!IS_NULL_VECT(mtcr->monochrome)) {
 			glUniform3f(mtcr->shader_loc_color_in,
@@ -1523,9 +1524,9 @@ void
 mt_cairo_render_blit_back2front(mt_cairo_render_t *mtcr,
     const mtcr_rect_t *rects, size_t num)
 {
-	UNUSED(mtcr);
-	UNUSED(rects);
-	UNUSED(num);
+	LACF_UNUSED(mtcr);
+	LACF_UNUSED(rects);
+	LACF_UNUSED(num);
 }
 
 /**
@@ -1598,7 +1599,7 @@ mtul_try_complete_ul(mt_cairo_render_t *mtcr, list_t *ul_inprog_list)
 	ASSERT(mtcr->dirty);
 	mtcr->dirty = B_FALSE;
 	mtcr->texed = B_FALSE;
-	mtcr->present_rs = !mtcr->render_rs;
+	mtcr->present_rs = mtcr->render_rs;
 	cv_broadcast(&mtcr->render_done_cv);
 	mutex_exit(&mtcr->lock);
 

@@ -13,7 +13,7 @@
  * CDDL HEADER END
  */
 /*
- * Copyright 2022 Saso Kiselkov. All rights reserved.
+ * Copyright 2023 Saso Kiselkov. All rights reserved.
  */
 
 #include <ctype.h>
@@ -91,7 +91,7 @@ tt_draw_cb(XPLMWindowID win, void *refcon)
 	int left, top, right, bottom;
 
 	ASSERT(win != NULL);
-	UNUSED(refcon);
+	LACF_UNUSED(refcon);
 
 	ASSERT(cur_tt_mtcr != NULL);
 	XPLMGetWindowGeometry(win, &left, &top, &right, &bottom);
@@ -187,7 +187,7 @@ find_first_monitor(int idx, int left, int top, int right, int bottom,
 {
 	monitor_t *mon = refcon;
 
-	UNUSED(idx);
+	LACF_UNUSED(idx);
 
 	if (mon->left == 0 && mon->right == 0 &&
 	    mon->top == 0 && mon->bottom == 0) {
@@ -257,7 +257,7 @@ tooltip_set_new_native(XPLMWindowID window)
 	int left, top, right, bottom;
 	cairo_text_extents_t te;
 
-	tooltip_set_t *tts = safe_malloc(sizeof (*tts));
+	tooltip_set_t *tts = safe_calloc(1, sizeof (*tts));
 	tts->window = window;
 	list_create(&tts->tooltips, sizeof (tooltip_t),
 	    offsetof(tooltip_t, node));
@@ -372,7 +372,7 @@ tooltip_new(tooltip_set_t *tts, int x, int y, int w, int h, const char *text)
 {
 	ASSERT(text != NULL);
 
-	tooltip_t *tt = safe_malloc(sizeof (*tt));
+	tooltip_t *tt = safe_calloc(1, sizeof (*tt));
 	tt->x = x;
 	tt->y = y;
 	tt->w = w;
@@ -393,7 +393,7 @@ static cairo_text_extents_t
 tts_measure_string(const tooltip_set_t *tts, const char *text, unsigned len)
 {
 	cairo_text_extents_t ts;
-	char buf[len + 1];
+	char *buf = safe_calloc(len + 1, sizeof (*buf));
 
 	ASSERT(tts != NULL);
 	ASSERT(tts->cr != NULL);
@@ -401,6 +401,7 @@ tts_measure_string(const tooltip_set_t *tts, const char *text, unsigned len)
 
 	strlcpy(buf, text, len + 1);
 	cairo_text_extents(tts->cr, buf, &ts);
+	free(buf);
 
 	return (ts);
 }
@@ -449,7 +450,6 @@ auto_wrap_text(const tooltip_set_t *tts, const char *text, double max_width,
 static void
 set_cur_tt(const tooltip_set_t *tts, tooltip_t *tt, int mouse_x, int mouse_y)
 {
-	int scr_left, scr_top, scr_right, scr_bottom;
 	int width = 2 * TOOLTIP_WINDOW_MARGIN;
 	int height = 2 * TOOLTIP_WINDOW_MARGIN;
 	XPLMCreateWindow_t cr = {
@@ -481,33 +481,48 @@ set_cur_tt(const tooltip_set_t *tts, tooltip_t *tt, int mouse_x, int mouse_y)
 	    tt_render_cb, NULL, (void *)tts);
 	mt_cairo_render_once_wait(cur_tt_mtcr);
 
-	XPLMGetScreenBoundsGlobal(&scr_left, &scr_top, &scr_right,
-	    &scr_bottom);
 	cr.left = mouse_x + TOOLTIP_WINDOW_OFFSET;
 	cr.right = mouse_x + width + TOOLTIP_WINDOW_OFFSET;
 	cr.top = mouse_y - TOOLTIP_WINDOW_OFFSET;
 	cr.bottom = mouse_y - height - TOOLTIP_WINDOW_OFFSET;
-	if (cr.left < scr_left) {
-		int delta = scr_left - cr.left;
+
+	int lim_left, lim_top, lim_right, lim_bottom;
+	if (XPLMWindowIsPoppedOut(tts->window)) {
+		XPLMGetWindowGeometry(tts->window, &lim_left, &lim_top,
+		    &lim_right, &lim_bottom);
+	} else {
+		XPLMGetScreenBoundsGlobal(&lim_left, &lim_top, &lim_right,
+		    &lim_bottom);
+	}
+	if (cr.left < lim_left) {
+		int delta = lim_left - cr.left;
 		cr.left += delta;
 		cr.right += delta;
 	}
-	if (cr.right > scr_right) {
-		int delta = cr.right - scr_right;
+	if (cr.right > lim_right) {
+		int delta = cr.right - lim_right;
 		cr.left -= delta;
 		cr.right -= delta;
 	}
-	if (cr.bottom < scr_bottom) {
-		int delta = scr_bottom - cr.bottom;
-		cr.top += delta;
-		cr.bottom += delta;
-	}
-	if (cr.top > scr_top) {
-		int delta = cr.top - scr_top;
+	if (cr.bottom < lim_bottom) {
+		/*
+		 * If we can place the tooltip above the mouse cursor,
+		 * do that instead of shifting the window up, as that
+		 * will cover the tooltip subject.
+		 */
+		if (mouse_y + height + TOOLTIP_WINDOW_OFFSET <= lim_top) {
+			cr.top = mouse_y + height + TOOLTIP_WINDOW_OFFSET;
+			cr.bottom = mouse_y + TOOLTIP_WINDOW_OFFSET;
+		} else {
+			int delta = lim_bottom - cr.bottom;
+			cr.top += delta;
+			cr.bottom += delta;
+		}
+	} else if (cr.top > lim_top) {
+		int delta = cr.top - lim_top;
 		cr.top -= delta;
 		cr.bottom -= delta;
 	}
-
 	cur_tt_win = XPLMCreateWindowEx(&cr);
 }
 
@@ -526,10 +541,10 @@ tooltip_floop_cb(float elapsed_since_last_call, float elapsed_since_last_floop,
 	tooltip_set_t *hit_tts = NULL;
 	tooltip_t *hit_tt = NULL;
 
-	UNUSED(elapsed_since_last_call);
-	UNUSED(elapsed_since_last_floop);
-	UNUSED(counter);
-	UNUSED(refcon);
+	LACF_UNUSED(elapsed_since_last_call);
+	LACF_UNUSED(elapsed_since_last_floop);
+	LACF_UNUSED(counter);
+	LACF_UNUSED(refcon);
 
 	XPLMGetMouseLocationGlobal(&mouse_x, &mouse_y);
 
@@ -633,10 +648,13 @@ bool_t
 window_follow_VR(XPLMWindowID win)
 {
 	bool_t vr = is_in_VR();
-	XPLMWindowPositioningMode mode =
-	    (vr ? xplm_WindowVR : xplm_WindowPositionFree);
 
 	ASSERT(win != NULL);
+	XPLMWindowPositioningMode mode = (XPLMWindowIsPoppedOut(win) ?
+	    xplm_WindowPopOut : xplm_WindowPositionFree);
+	if (vr) {
+		mode = xplm_WindowVR;
+	}
 	XPLMSetWindowPositioningMode(win, mode, -1);
 
 	return (vr);
@@ -660,7 +678,7 @@ find_window(int idx, int left, int top, int right, int bottom, void *refcon)
 	enum { MARGIN = 50 };
 	find_window_t *info;
 
-	UNUSED(idx);
+	LACF_UNUSED(idx);
 	ASSERT(refcon != NULL);
 	info = refcon;
 
