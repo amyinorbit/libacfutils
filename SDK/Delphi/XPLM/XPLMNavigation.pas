@@ -466,7 +466,8 @@ TYPE
     This routine changes an entry in the FMS to have the destination navaid
     passed in and the altitude specified.  Use this only for airports, fixes,
     and radio-beacon navaids.  Currently of radio beacons, the FMS can only
-    support VORs and NDBs. Use the routines below to clear or fly to a lat/lon.
+    support VORs, NDBs and TACANs. Use the routines below to clear or fly to a
+    lat/lon.
    }
    PROCEDURE XPLMSetFMSFlightPlanEntryInfo(
                                         inFlightPlan        : XPLMNavFlightPlan;

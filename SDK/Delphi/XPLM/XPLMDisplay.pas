@@ -361,6 +361,12 @@ TYPE
      { Primus Radio Management Unit, copilot side.                                }
      ,xplm_device_Primus_RMU_2                 = 17
  
+     { Airbus MCDU, pilot side.                                                   }
+     ,xplm_device_MCDU_1                       = 18
+ 
+     { Airbus MCDU, copilot side.                                                 }
+     ,xplm_device_MCDU_2                       = 19
+ 
    );
    PXPLMDeviceID = ^XPLMDeviceID;
 
@@ -812,7 +818,7 @@ TYPE
     
             If the device is bound to the current aircraft, this is a shortcut
             to getting the brightness rheostat value from the
-            `sim/cockpit2/electrical/instrument_brightness_ratio` dataref; this
+            `sim/cockpit2/switches/instrument_brightness_ratio[]` dataref; this
             gets the slot in the `instrument_brightness_ratio` array to which
             the device is bound.
     
